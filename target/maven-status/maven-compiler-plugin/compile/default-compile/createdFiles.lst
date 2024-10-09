@@ -1,0 +1,9 @@
+ru/nsu/db/tables/Users.class
+ru/nsu/db/services/JwtTokenService.class
+ru/nsu/controllers/TaskController.class
+ru/nsu/db/repositoris/UsersRepository.class
+ru/nsu/controllers/GroupController.class
+ru/nsu/controllers/AuthController.class
+ru/nsu/db/config/SecurityConfig.class
+ru/nsu/db/services/UsersService.class
+ru/nsu/Main.class

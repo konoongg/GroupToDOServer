@@ -1,0 +1,9 @@
+/home/konoongglts/work/groupToDo/src/main/java/ru/nsu/db/tables/Users.java
+/home/konoongglts/work/groupToDo/src/main/java/ru/nsu/controllers/GroupController.java
+/home/konoongglts/work/groupToDo/src/main/java/ru/nsu/db/repositoris/UsersRepository.java
+/home/konoongglts/work/groupToDo/src/main/java/ru/nsu/db/config/SecurityConfig.java
+/home/konoongglts/work/groupToDo/src/main/java/ru/nsu/controllers/AuthController.java
+/home/konoongglts/work/groupToDo/src/main/java/ru/nsu/db/services/JwtTokenService.java
+/home/konoongglts/work/groupToDo/src/main/java/ru/nsu/controllers/TaskController.java
+/home/konoongglts/work/groupToDo/src/main/java/ru/nsu/db/services/UsersService.java
+/home/konoongglts/work/groupToDo/src/main/java/ru/nsu/Main.java
