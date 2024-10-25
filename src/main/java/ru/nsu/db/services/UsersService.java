@@ -49,4 +49,45 @@
         public Users findByLogin(String login) {
             return userRepository.findByLogin(login);
         }
+
+        public void deleteUser(Users user) {
+            userRepository.delete(user);
+        }
+
+        public boolean updatePassword(String username, String newPassword) {
+            Users user = userRepository.findByLogin(username);
+            if (user == null) {
+                return false;
+            }
+            String encodedNewPassword = passwordEncoder.encode(newPassword);
+            user.setPassword(encodedNewPassword);
+            userRepository.save(user);
+            return true;
+        }
+
+        public boolean updateLogin(String username, String newLogin) {
+            Users user = userRepository.findByLogin(username);
+            if (user == null) {
+                return false;
+            }
+            if (userRepository.findByLogin(newLogin) != null) {
+                return false;
+            }
+            user.setLogin(newLogin);
+            userRepository.save(user);
+            return true;
+        }
+
+        public boolean updateEmail(String username, String newEmail) {
+            Users user = userRepository.findByLogin(username);
+            if (user == null) {
+                return false;
+            }
+            if (userRepository.findByEmail(newEmail) != null) {
+                return false;
+            }
+            user.setEmail(newEmail);
+            userRepository.save(user);
+            return true;
+        }
     }

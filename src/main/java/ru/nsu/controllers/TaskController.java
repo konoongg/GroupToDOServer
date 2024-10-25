@@ -26,13 +26,13 @@ public class TaskController {
 
     @PostMapping("/create")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<Tasks> createTask(@RequestBody Tasks task) {
+    public ResponseEntity<String> createTask(@RequestBody Tasks task) {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String username = userDetails.getUsername();
         Users user = userService.findByLogin(username);
         task.setOwner(user);
         Tasks createdTask = taskService.createTask(task);
-        return ResponseEntity.ok(createdTask);
+        return new ResponseEntity<>("task created", HttpStatus.OK);
     }
 
     @GetMapping("/uncompleted")
@@ -57,40 +57,40 @@ public class TaskController {
 
     @PutMapping("/update/{taskId}")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<Tasks> updateTask(@PathVariable Long taskId, @RequestBody Tasks updatedTask) {
+    public ResponseEntity<String> updateTask(@PathVariable Long taskId, @RequestBody Tasks updatedTask) {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String username = userDetails.getUsername();
         Users user = userService.findByLogin(username);
 
         Tasks existingTask = taskService.findById(taskId).orElse(null);
         if (existingTask == null || !existingTask.getOwner().getId().equals(user.getId())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            return new ResponseEntity<>("task not found", HttpStatus.NOT_FOUND);
         }
         Tasks updated = taskService.updateTask(taskId, updatedTask);
         if (updated != null) {
-            return ResponseEntity.ok(updated);
+            return new ResponseEntity<>("task update", HttpStatus.OK);
         } else {
-            return ResponseEntity.notFound().build();
+            return new ResponseEntity<>("task not found", HttpStatus.NOT_FOUND);
         }
     }
 
     @DeleteMapping("/delete/{taskId}")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<Void> deleteTask(@PathVariable Long taskId) {
+    public ResponseEntity<String> deleteTask(@PathVariable Long taskId) {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String username = userDetails.getUsername();
         Users user = userService.findByLogin(username);
 
         Tasks existingTask = taskService.findById(taskId).orElse(null);
         if (existingTask == null || !existingTask.getOwner().getId().equals(user.getId())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            return new ResponseEntity<>("task not found", HttpStatus.NOT_FOUND);
         }
 
         boolean deleted = taskService.deleteTask(taskId);
         if (deleted) {
-            return ResponseEntity.noContent().build();
+            return new ResponseEntity<>("task deleted", HttpStatus.OK);
         } else {
-            return ResponseEntity.notFound().build();
+            return new ResponseEntity<>("task not found", HttpStatus.NOT_FOUND);
         }
     }
 }
