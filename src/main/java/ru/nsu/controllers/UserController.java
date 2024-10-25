@@ -15,10 +15,13 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import ru.nsu.db.services.JwtTokenService;
 import ru.nsu.db.services.UsersService;
+import ru.nsu.db.tables.Groups;
 import ru.nsu.db.tables.Users;
 import ru.nsu.db.tables.dto.LoginRequest;
 import ru.nsu.db.tables.dto.UpdatePasswordRequest;
 import ru.nsu.exceptions.UserAlreadyExistsException;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/user")
@@ -26,9 +29,6 @@ public class UserController {
 
     @Autowired
     private UsersService userService;
-
-    @Autowired
-    private JwtTokenService jwtTokenService;
 
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
@@ -90,6 +90,15 @@ public class UserController {
         } else {
             return new ResponseEntity<>("Email already exists", HttpStatus.BAD_REQUEST);
         }
+    }
+
+    @GetMapping("/groups")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<List<Groups>> getUserGroups() {
+        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String username = userDetails.getUsername();
+        List<Groups> groups = userService.getUserGroups(username);
+        return ResponseEntity.ok(groups);
     }
 }
 

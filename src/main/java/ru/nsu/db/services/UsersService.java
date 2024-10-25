@@ -1,16 +1,25 @@
     package ru.nsu.db.services;
 
     import org.springframework.beans.factory.annotation.Autowired;
+    import org.springframework.http.HttpStatus;
+    import org.springframework.http.ResponseEntity;
     import org.springframework.security.core.userdetails.UserDetails;
     import org.springframework.security.core.userdetails.UserDetailsService;
     import org.springframework.security.core.userdetails.UsernameNotFoundException;
     import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
     import org.springframework.stereotype.Service;
+    import ru.nsu.db.repositoris.GroupsRepository;
     import ru.nsu.db.repositoris.UsersRepository;
+    import ru.nsu.db.tables.Groups;
     import ru.nsu.db.tables.Users;
+    import ru.nsu.db.tables.UsersInGroup;
     import ru.nsu.exceptions.UserAlreadyExistsException;
 
     import java.util.ArrayList;
+    import java.util.HashSet;
+    import java.util.List;
+    import java.util.Set;
+    import java.util.stream.Collectors;
 
     @Service
     public class UsersService implements UserDetailsService {
@@ -20,6 +29,9 @@
 
         @Autowired
         private UsersRepository userRepository;
+
+        @Autowired
+        private GroupsRepository groupsRepository;
 
         @Override
         public UserDetails loadUserByUsername(String login) throws UsernameNotFoundException {
@@ -89,5 +101,20 @@
             user.setEmail(newEmail);
             userRepository.save(user);
             return true;
+        }
+
+        public List<Groups> getUserGroups(String username) {
+            Users user = userRepository.findByLogin(username);
+            if (user == null) {
+                return null;
+            }
+
+            Set<UsersInGroup>  usersInGroup = user.getUsersInGroup();
+            Set<Long> groupIds = new HashSet<>();
+            for (UsersInGroup group : usersInGroup) {
+                groupIds.add(group.getGroup().getId());
+            }
+            List<Groups> groups = groupsRepository.findAllById(groupIds);
+            return groups;
         }
     }

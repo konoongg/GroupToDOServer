@@ -1,5 +1,7 @@
 package ru.nsu.db.tables;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import javax.persistence.*;
 import java.util.Date;
 
@@ -17,6 +19,7 @@ public class Tasks {
 
     private String location;
 
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "ownerId", referencedColumnName = "id", nullable = false)
     private Users owner;

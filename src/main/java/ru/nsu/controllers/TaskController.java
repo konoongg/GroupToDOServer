@@ -8,6 +8,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import ru.nsu.db.services.TasksService;
+import ru.nsu.db.services.UsersInGroupService;
 import ru.nsu.db.services.UsersService;
 import ru.nsu.db.tables.Tasks;
 import ru.nsu.db.tables.Users;
@@ -23,6 +24,9 @@ public class TaskController {
 
     @Autowired
     private UsersService userService;
+
+    @Autowired
+    private UsersInGroupService usersInGroupService;
 
     @PostMapping("/create")
     @PreAuthorize("hasRole('USER')")
@@ -92,5 +96,35 @@ public class TaskController {
         } else {
             return new ResponseEntity<>("task not found", HttpStatus.NOT_FOUND);
         }
+    }
+
+    @GetMapping("/group/uncompleted/{groupId}")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<List<Tasks>> getGroupUncompletedTasks(@PathVariable Long groupId) {
+        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String username = userDetails.getUsername();
+        Users user = userService.findByLogin(username);
+
+        if (!usersInGroupService.isUserInGroup(user.getId(), groupId)) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
+
+        List<Tasks> uncompletedTasks = taskService.findByGroupIdAndStatus(groupId, 0);
+        return ResponseEntity.ok(uncompletedTasks);
+    }
+
+    @GetMapping("/group/completed/{groupId}")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<List<Tasks>> getGroupCompletedTasks(@PathVariable Long groupId) {
+        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String username = userDetails.getUsername();
+        Users user = userService.findByLogin(username);
+
+        if (!usersInGroupService.isUserInGroup(user.getId(), groupId)) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
+
+        List<Tasks> uncompletedTasks = taskService.findByGroupIdAndStatus(groupId, 1);
+        return ResponseEntity.ok(uncompletedTasks);
     }
 }

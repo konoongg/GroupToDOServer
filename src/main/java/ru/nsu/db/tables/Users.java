@@ -1,6 +1,9 @@
 package ru.nsu.db.tables;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import javax.persistence.*;
+import java.util.Set;
 
 @Entity
 public class Users {
@@ -11,11 +14,17 @@ public class Users {
 
     @Column(unique = true, nullable = false)
     private String login;
+
     @Column(nullable = false)
     private String password;
 
     @Column(unique = true, nullable = false)
     private String email;
+
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<UsersInGroup> usersInGroup;
 
     public Long getId() {
         return id;
@@ -47,5 +56,13 @@ public class Users {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public Set<UsersInGroup> getUsersInGroup() {
+        return usersInGroup;
+    }
+
+    public void setUsersInGroup(Set<UsersInGroup> usersInGroup) {
+        this.usersInGroup = usersInGroup;
     }
 }

@@ -52,4 +52,8 @@ public class TasksService {
             return false;
         }
     }
+
+    public List<Tasks> findByGroupIdAndStatus(Long groupId, int status) {
+        return tasksRepository.findByGroupIdAndStatus(groupId, status);
+    }
 }
