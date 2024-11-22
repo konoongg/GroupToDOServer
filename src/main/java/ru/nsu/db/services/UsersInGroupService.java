@@ -5,6 +5,8 @@ import org.springframework.stereotype.Service;
 import ru.nsu.db.repositoris.UsersInGroupRepository;
 import ru.nsu.db.tables.UsersInGroup;
 
+import javax.transaction.Transactional;
+
 @Service
 public class UsersInGroupService {
 
@@ -26,11 +28,20 @@ public class UsersInGroupService {
         return usersInGroup != null && usersInGroup.isAdmin();
     }
 
+    @Transactional
     public void addUserToGroup(Long userId, Long groupId) {
         UsersInGroup usersInGroup = new UsersInGroup();
         usersInGroup.setUser(usersService.findById(userId));
         usersInGroup.setGroup(groupsService.findById(groupId));
         usersInGroup.setAdmin(false);
         usersInGroupRepository.save(usersInGroup);
+    }
+
+    @Transactional
+    public void removeUserFromGroup(Long userId, Long groupId) {
+        UsersInGroup usersInGroup = usersInGroupRepository.findByUserIdAndGroupId(userId, groupId);
+        if (usersInGroup != null) {
+            usersInGroupRepository.delete(usersInGroup);
+        }
     }
 }

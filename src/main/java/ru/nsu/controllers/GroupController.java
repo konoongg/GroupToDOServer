@@ -61,4 +61,31 @@ public class GroupController {
         groupService.deleteGroup(groupId);
         return new ResponseEntity<>("Group deleted successfully", HttpStatus.OK);
     }
+
+    @DeleteMapping("/removeUser/{groupId}/{userId}")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<String> removeUserFromGroup(@PathVariable Long groupId, @PathVariable Long userId) {
+        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String username = userDetails.getUsername();
+        Users currentUser = usersService.findByLogin(username);
+        if (currentUser == null) {
+            return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
+        }
+
+        if (!usersInGroupService.isUserAdminInGroup(currentUser.getId(), groupId)) {
+            return new ResponseEntity<>("User is not an admin of the group", HttpStatus.FORBIDDEN);
+        }
+
+        Users userToRemove = usersService.findById(userId);
+        if (userToRemove == null) {
+            return new ResponseEntity<>("User to remove not found", HttpStatus.NOT_FOUND);
+        }
+
+        if (!usersInGroupService.isUserInGroup(userToRemove.getId(), groupId)) {
+            return new ResponseEntity<>("User is not a member of the group", HttpStatus.FORBIDDEN);
+        }
+
+        usersInGroupService.removeUserFromGroup(userToRemove.getId(), groupId);
+        return new ResponseEntity<>("User removed from group successfully", HttpStatus.OK);
+    }
 }
