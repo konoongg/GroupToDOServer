@@ -34,4 +34,10 @@ public class GroupsService {
         usersInGroupRepository.save(usersInGroup);
         return group;
     }
+
+    @Transactional
+    public void deleteGroup(Long groupId) {
+        usersInGroupRepository.deleteByGroupId(groupId);
+        groupsRepository.deleteById(groupId);
+    }
 }
