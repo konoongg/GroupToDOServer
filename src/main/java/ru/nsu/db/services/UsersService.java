@@ -117,4 +117,8 @@
             List<Groups> groups = groupsRepository.findAllById(groupIds);
             return groups;
         }
+
+        public Users findById(Long userId) {
+            return userRepository.findById(userId).orElse(null);
+        }
     }

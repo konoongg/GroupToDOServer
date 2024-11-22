@@ -40,4 +40,8 @@ public class GroupsService {
         usersInGroupRepository.deleteByGroupId(groupId);
         groupsRepository.deleteById(groupId);
     }
+
+    public Groups findById(Long groupId) {
+        return groupsRepository.findById(groupId).orElse(null);
+    }
 }
