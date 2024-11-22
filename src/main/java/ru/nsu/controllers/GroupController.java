@@ -1,5 +1,8 @@
 package ru.nsu.controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,6 +31,11 @@ public class GroupController {
     private UsersInGroupService usersInGroupService;
 
     @PostMapping("/create")
+    @Operation(summary = "Create a new group", description = "Creates a new group with the specified name")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Group created successfully"),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<String> createGroup(@RequestBody CreateGroupRequest createGroupRequest) {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -41,6 +49,12 @@ public class GroupController {
     }
 
     @DeleteMapping("/delete/{groupId}")
+    @Operation(summary = "Delete a group", description = "Deletes the group with the specified ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Group deleted successfully"),
+            @ApiResponse(responseCode = "403", description = "User is not an admin of the group"),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<String> deleteGroup(@PathVariable Long groupId) {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -64,6 +78,12 @@ public class GroupController {
 
     @DeleteMapping("/removeUser/{groupId}/{userId}")
     @PreAuthorize("hasRole('USER')")
+    @Operation(summary = "Remove a user from a group", description = "Removes the specified user from the group")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User removed from group successfully"),
+            @ApiResponse(responseCode = "403", description = "User is not an admin of the group"),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
     public ResponseEntity<String> removeUserFromGroup(@PathVariable Long groupId, @PathVariable Long userId) {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String username = userDetails.getUsername();

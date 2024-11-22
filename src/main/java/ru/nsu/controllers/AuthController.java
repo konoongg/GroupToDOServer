@@ -1,5 +1,8 @@
 package ru.nsu.controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,6 +36,11 @@ public class AuthController {
     private AuthenticationManager authenticationManager;
 
     @PostMapping("/register")
+    @Operation(summary = "Register a new user", description = "Registers a new user with the provided credentials")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User registered successfully"),
+            @ApiResponse(responseCode = "409", description = "User already exists")
+    })
     public ResponseEntity<String> register(@RequestBody Users appUser) {
         try {
             Users registeredUser = userService.registerUser(appUser);
@@ -44,6 +52,11 @@ public class AuthController {
     }
 
     @PostMapping("/login")
+    @Operation(summary = "Authenticate a user", description = "Authenticates a user with the provided credentials")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User authenticated successfully"),
+            @ApiResponse(responseCode = "401", description = "Invalid credentials or authentication failed")
+    })
     public ResponseEntity<String> login(@RequestBody LoginRequest loginRequest) {
         try {
             Authentication authentication = authenticationManager.authenticate(

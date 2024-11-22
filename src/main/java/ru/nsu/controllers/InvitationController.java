@@ -1,5 +1,8 @@
 package ru.nsu.controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +32,12 @@ public class InvitationController {
     private UsersInGroupService usersInGroupService;
 
     @PostMapping("/create")
+    @Operation(summary = "Create a new invitation", description = "Creates a new invitation for a user to join a group")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Invitation created successfully"),
+            @ApiResponse(responseCode = "403", description = "User is not an admin of the group"),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<String> createInvitation(@RequestBody Invitation invitation) {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -53,6 +62,12 @@ public class InvitationController {
     }
 
     @PutMapping("/accept/{invitationId}")
+    @Operation(summary = "Accept an invitation", description = "Accepts an invitation to join a group")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Invitation accepted successfully"),
+            @ApiResponse(responseCode = "403", description = "You are not authorized to accept this invitation"),
+            @ApiResponse(responseCode = "404", description = "Invitation not found")
+    })
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<String> acceptInvitation(@PathVariable Long invitationId) {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -85,6 +100,11 @@ public class InvitationController {
     }
 
     @GetMapping("/sent")
+    @Operation(summary = "Get sent invitations", description = "Retrieves a list of invitations sent by the current user")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Invitations retrieved successfully"),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<List<Invitation>> getSentInvitations() {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -99,6 +119,11 @@ public class InvitationController {
     }
 
     @GetMapping("/received")
+    @Operation(summary = "Get received invitations", description = "Retrieves a list of invitations received by the current user")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Invitations retrieved successfully"),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<List<Invitation>> getReceivedInvitations() {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -113,6 +138,12 @@ public class InvitationController {
     }
 
     @DeleteMapping("/delete/{invitationId}")
+    @Operation(summary = "Delete an invitation", description = "Deletes an invitation sent by the current user or received by the current user")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Invitation deleted successfully"),
+            @ApiResponse(responseCode = "403", description = "You are not authorized to delete this invitation"),
+            @ApiResponse(responseCode = "404", description = "Invitation not found")
+    })
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<String> deleteInvitation(@PathVariable Long invitationId) {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();

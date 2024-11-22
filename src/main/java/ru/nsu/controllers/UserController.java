@@ -1,5 +1,8 @@
 package ru.nsu.controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,6 +37,11 @@ public class UserController {
     private BCryptPasswordEncoder passwordEncoder;
 
     @DeleteMapping("/delete")
+    @Operation(summary = "Delete user account", description = "Deletes the current user's account")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Account deleted successfully"),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<String> deleteAccount(@RequestBody LoginRequest loginRequest) {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -50,6 +58,11 @@ public class UserController {
     }
 
     @PutMapping("/updatePassword")
+    @Operation(summary = "Update user password", description = "Updates the current user's password")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Password updated successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid old password")
+    })
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<String> updatePassword(@RequestBody UpdatePasswordRequest updatePasswordRequest) {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -67,6 +80,11 @@ public class UserController {
     }
 
     @PutMapping("/updateLogin")
+    @Operation(summary = "Update user login", description = "Updates the current user's login")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Login updated successfully"),
+            @ApiResponse(responseCode = "400", description = "Login already exists")
+    })
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<String> updateLogin(@RequestParam String newLogin) {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -80,6 +98,11 @@ public class UserController {
     }
 
     @PutMapping("/updateEmail")
+    @Operation(summary = "Update user email", description = "Updates the current user's email")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Email updated successfully"),
+            @ApiResponse(responseCode = "400", description = "Email already exists")
+    })
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<String> updateEmail(@RequestParam String newEmail) {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -93,6 +116,10 @@ public class UserController {
     }
 
     @GetMapping("/groups")
+    @Operation(summary = "Get user groups", description = "Retrieves a list of groups the current user is a member of")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Groups retrieved successfully")
+    })
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<List<Groups>> getUserGroups() {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();

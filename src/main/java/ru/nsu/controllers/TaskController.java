@@ -1,5 +1,8 @@
 package ru.nsu.controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +32,10 @@ public class TaskController {
     private UsersInGroupService usersInGroupService;
 
     @PostMapping("/create")
+    @Operation(summary = "Create a new task", description = "Creates a new task for the current user")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Task created successfully")
+    })
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<String> createTask(@RequestBody Tasks task) {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -40,6 +47,10 @@ public class TaskController {
     }
 
     @GetMapping("/uncompleted")
+    @Operation(summary = "Get uncompleted tasks", description = "Retrieves a list of uncompleted tasks for the current user")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Uncompleted tasks retrieved successfully")
+    })
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<List<Tasks>> getUncompletedTasks() {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -50,6 +61,10 @@ public class TaskController {
     }
 
     @GetMapping("/completed")
+    @Operation(summary = "Get completed tasks", description = "Retrieves a list of completed tasks for the current user")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Completed tasks retrieved successfully")
+    })
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<List<Tasks>> getCompletedTasks() {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -60,6 +75,11 @@ public class TaskController {
     }
 
     @PutMapping("/update/{taskId}")
+    @Operation(summary = "Update a task", description = "Updates an existing task for the current user")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Task updated successfully"),
+            @ApiResponse(responseCode = "404", description = "Task not found")
+    })
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<String> updateTask(@PathVariable Long taskId, @RequestBody Tasks updatedTask) {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -79,6 +99,11 @@ public class TaskController {
     }
 
     @DeleteMapping("/delete/{taskId}")
+    @Operation(summary = "Delete a task", description = "Deletes an existing task for the current user")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Task deleted successfully"),
+            @ApiResponse(responseCode = "404", description = "Task not found")
+    })
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<String> deleteTask(@PathVariable Long taskId) {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -99,6 +124,11 @@ public class TaskController {
     }
 
     @GetMapping("/group/uncompleted/{groupId}")
+    @Operation(summary = "Get completed tasks for a group", description = "Retrieves a list of completed tasks for a specific group")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Completed tasks retrieved successfully"),
+            @ApiResponse(responseCode = "403", description = "User is not a member of the group")
+    })
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<List<Tasks>> getGroupUncompletedTasks(@PathVariable Long groupId) {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
