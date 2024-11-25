@@ -36,7 +36,10 @@ public class GroupController {
     private UsersInGroupService usersInGroupService;
 
     @PostMapping("/create")
-    @Operation(summary = "Create a new group", description = "Creates a new group with the specified name")
+    @Operation(summary = "Create a new group", description = "Creates a new group with the specified name " +
+            "body {\n" +
+            "    \"groupName\": \"New Group\"\n" +
+            "}")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Group created successfully"),
             @ApiResponse(responseCode = "404", description = "User not found")

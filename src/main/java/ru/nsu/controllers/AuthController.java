@@ -39,7 +39,12 @@ public class AuthController {
     private AuthenticationManager authenticationManager;
 
     @PostMapping("/register")
-    @Operation(summary = "Register a new user", description = "Registers a new user with the provided credentials")
+    @Operation(summary = "Register a new user", description = "Registers a new user with the provided credentials " +
+            "body: {\n" +
+            "  \"login\": \"example\",\n" +
+            "  \"email\": \"example@example.com\",\n" +
+            "  \"password\": \"example\"\n" +
+            "}")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "User registered successfully"),
             @ApiResponse(responseCode = "409", description = "User already exists")
@@ -64,7 +69,11 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    @Operation(summary = "Authenticate a user", description = "Authenticates a user with the provided credentials")
+    @Operation(summary = "Authenticate a user", description = "Authenticates a user with the provided credentials " +
+            "body {\n" +
+            "    \"login\": \"example\",\n" +
+            "    \"password\": \"example\"\n" +
+            "}")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "User authenticated successfully"),
             @ApiResponse(responseCode = "401", description = "Invalid credentials or authentication failed")

@@ -24,7 +24,9 @@ import ru.nsu.db.tables.dto.LoginRequest;
 import ru.nsu.db.tables.dto.UpdatePasswordRequest;
 import ru.nsu.exceptions.UserAlreadyExistsException;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/user")
@@ -43,75 +45,132 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = "User not found")
     })
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<String> deleteAccount(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<Map<String, Object>> deleteAccount(@RequestBody LoginRequest loginRequest) {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String username = userDetails.getUsername();
         Users user = userService.findByLogin(username);
         if (user == null) {
-            return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.NOT_FOUND.value());
+            response.put("message", "User not found");
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
         }
         if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-            return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.NOT_FOUND.value());
+            response.put("message", "User not found");
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
         }
         userService.deleteUser(user);
-        return new ResponseEntity<>("Account deleted successfully", HttpStatus.OK);
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", HttpStatus.OK.value());
+        response.put("message", "Account deleted successfully");
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @PutMapping("/updatePassword")
-    @Operation(summary = "Update user password", description = "Updates the current user's password")
+    @Operation(summary = "Update user password", description = "Updates the current user's password " +
+            "body{\n" +
+            "    \"oldPassword\": \"oldpassword\",\n" +
+            "    \"newPassword\": \"newpassword\"\n" +
+            "}")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Password updated successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid old password")
+            @ApiResponse(responseCode = "400", description = "Invalid old password"),
+            @ApiResponse(responseCode = "404", description = "User not found")
     })
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<String> updatePassword(@RequestBody UpdatePasswordRequest updatePasswordRequest) {
+    public ResponseEntity<Map<String, Object>> updatePassword(@RequestBody UpdatePasswordRequest updatePasswordRequest) {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String username = userDetails.getUsername();
-
+        Users user = userService.findByLogin(username);
+        if (user == null) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.NOT_FOUND.value());
+            response.put("message", "User not found");
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        }
         if (!passwordEncoder.matches(updatePasswordRequest.getOldPassword(), userDetails.getPassword())) {
-            return new ResponseEntity<>("Invalid old password", HttpStatus.BAD_REQUEST);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.BAD_REQUEST.value());
+            response.put("message", "Invalid old password");
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
         boolean success = userService.updatePassword(username, updatePasswordRequest.getNewPassword());
         if (success) {
-            return new ResponseEntity<>("Password updated successfully", HttpStatus.OK);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.OK.value());
+            response.put("message", "Password updated successfully");
+            return new ResponseEntity<>(response, HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Invalid old password", HttpStatus.BAD_REQUEST);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.BAD_REQUEST.value());
+            response.put("message", "Invalid old password");
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
     }
 
     @PutMapping("/updateLogin")
-    @Operation(summary = "Update user login", description = "Updates the current user's login")
+    @Operation(summary = "Update user login", description = "Updates the current user's login ?newLogin=newlogin")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Login updated successfully"),
-            @ApiResponse(responseCode = "400", description = "Login already exists")
+            @ApiResponse(responseCode = "400", description = "Login already exists"),
+            @ApiResponse(responseCode = "404", description = "User not found")
     })
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<String> updateLogin(@RequestParam String newLogin) {
+    public ResponseEntity<Map<String, Object>> updateLogin(@RequestParam String newLogin) {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String username = userDetails.getUsername();
+        Users user = userService.findByLogin(username);
+        if (user == null) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.NOT_FOUND.value());
+            response.put("message", "User not found");
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        }
         boolean success = userService.updateLogin(username, newLogin);
         if (success) {
-            return new ResponseEntity<>("Login updated successfully", HttpStatus.OK);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.OK.value());
+            response.put("message", "Login updated successfully");
+            return new ResponseEntity<>(response, HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Login already exists", HttpStatus.BAD_REQUEST);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.BAD_REQUEST.value());
+            response.put("message", "Login already exists");
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
     }
 
     @PutMapping("/updateEmail")
-    @Operation(summary = "Update user email", description = "Updates the current user's email")
+    @Operation(summary = "Update user email", description = "Updates the current user's email  ?newEmail=newemail@example.com ")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Email updated successfully"),
-            @ApiResponse(responseCode = "400", description = "Email already exists")
+            @ApiResponse(responseCode = "400", description = "Email already exists"),
+            @ApiResponse(responseCode = "404", description = "User not found")
     })
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<String> updateEmail(@RequestParam String newEmail) {
+    public ResponseEntity<Map<String, Object>> updateEmail(@RequestParam String newEmail) {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String username = userDetails.getUsername();
+        Users user = userService.findByLogin(username);
+        if (user == null) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.NOT_FOUND.value());
+            response.put("message", "User not found");
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        }
         boolean success = userService.updateEmail(username, newEmail);
         if (success) {
-            return new ResponseEntity<>("Email updated successfully", HttpStatus.OK);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.OK.value());
+            response.put("message", "Email updated successfully");
+            return new ResponseEntity<>(response, HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Email already exists", HttpStatus.BAD_REQUEST);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.BAD_REQUEST.value());
+            response.put("message", "Email already exists");
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -121,11 +180,51 @@ public class UserController {
             @ApiResponse(responseCode = "200", description = "Groups retrieved successfully")
     })
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<List<Groups>> getUserGroups() {
+    public ResponseEntity<Map<String, Object>> getUserGroups() {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String username = userDetails.getUsername();
+        Users user = userService.findByLogin(username);
+        if (user == null) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.NOT_FOUND.value());
+            response.put("message", "User not found");
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        }
         List<Groups> groups = userService.getUserGroups(username);
-        return ResponseEntity.ok(groups);
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", HttpStatus.OK.value());
+        response.put("message", "Groups retrieved successfully");
+        response.put("groups", groups);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/info")
+    @Operation(summary = "Get user info", description = "Retrieves information about the current user")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User info retrieved successfully"),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<Map<String, Object>> getUserInfo() {
+        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String username = userDetails.getUsername();
+        Users user = userService.findByLogin(username);
+        if (user == null) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.NOT_FOUND.value());
+            response.put("message", "User not found");
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        }
+        Map<String, Object> userInfo = new HashMap<>();
+        userInfo.put("id", user.getId());
+        userInfo.put("login", user.getLogin());
+        userInfo.put("email", user.getEmail());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", HttpStatus.OK.value());
+        response.put("message", "User info retrieved successfully");
+        response.put("user", userInfo);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }
 
