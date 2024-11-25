@@ -36,13 +36,13 @@ public class TaskController {
     @PostMapping("/create")
     @Operation(summary = "Create a new task", description = "Creates a new task for the current user " +
             "body{\n" +
-            "    \"name\": \"New Task\",\n" +
-            "    \"des\": \"This is a new task\",\n" +
-            "    \"location\": \"Some location\",\n" +
-            "    \"groupId\": 1,\n" +
-            "    \"status\": 0,\n" +
-            "    \"type\": 1,\n" +
-            "    \"date\": \"2023-12-31T23:59:59\"\n" +
+            "    \"name\": \"new Task\",\n" +
+            "    \"des\": \"This task a new Task\",\n" +
+            "    \"location\": \"new location\",\n" +
+            "    \"groupId\": {id},\n" +
+            "    \"status\": {0 - uncompleted | 1 - completed},\n" +
+            "    \"type\": {type id},\n" +
+            "    \"date\": \"{date}\"\n" +
             "}")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Task created successfully"),
@@ -126,10 +126,10 @@ public class TaskController {
             "    \"name\": \"Updated Task\",\n" +
             "    \"des\": \"This task has been updated\",\n" +
             "    \"location\": \"Updated location\",\n" +
-            "    \"groupId\": 1,\n" +
-            "    \"status\": 1,\n" +
-            "    \"type\": 2,\n" +
-            "    \"date\": \"2024-12-31T23:59:59\"\n" +
+            "    \"groupId\": {id},\n" +
+            "    \"status\": {0 - uncompleted | 1 - completed},\n" +
+            "    \"type\": {type id},\n" +
+            "    \"date\": \"{date}\"\n" +
             "}")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Task updated successfully"),

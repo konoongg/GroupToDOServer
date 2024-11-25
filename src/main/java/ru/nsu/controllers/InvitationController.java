@@ -16,7 +16,9 @@ import ru.nsu.db.services.UsersService;
 import ru.nsu.db.tables.Invitation;
 import ru.nsu.db.tables.Users;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/invitation")
@@ -32,33 +34,55 @@ public class InvitationController {
     private UsersInGroupService usersInGroupService;
 
     @PostMapping("/create")
-    @Operation(summary = "Create a new invitation", description = "Creates a new invitation for a user to join a group")
+    @Operation(summary = "Create a new invitation", description = "Creates a new invitation for a user to join a group" +
+            "body {\n" +
+            "  \"userTo\": {\n" +
+            "    \"id\": {id}\n" +
+            "  },\n" +
+            "  \"group\": {\n" +
+            "    \"id\": {id}\n" +
+            "  }\n" +
+            "}")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Invitation created successfully"),
             @ApiResponse(responseCode = "403", description = "User is not an admin of the group"),
             @ApiResponse(responseCode = "404", description = "User not found")
     })
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<String> createInvitation(@RequestBody Invitation invitation) {
+    public ResponseEntity<Map<String, Object>> createInvitation(@RequestBody Invitation invitation) {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String username = userDetails.getUsername();
         Users userFrom = usersService.findByLogin(username);
         if (userFrom == null) {
-            return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.NOT_FOUND.value());
+            response.put("message", "User not found");
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
         }
 
         if (!usersInGroupService.isUserAdminInGroup(userFrom.getId(), invitation.getGroup().getId())) {
-            return new ResponseEntity<>("User is not an admin of the group", HttpStatus.FORBIDDEN);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.FORBIDDEN.value());
+            response.put("message", "User is not an admin of the group");
+            return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
         }
 
         if (usersInGroupService.isUserInGroup(invitation.getUserTo().getId(), invitation.getGroup().getId())) {
-            return new ResponseEntity<>("User already is a member of the group", HttpStatus.OK);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.OK.value());
+            response.put("message", "User already is a member of the group");
+            return new ResponseEntity<>(response, HttpStatus.OK);
         }
 
         invitation.setUserFrom(userFrom);
         invitation.setStatus("PENDING");
-        invitationService.createInvitation(invitation);
-        return new ResponseEntity<>("Invitation created successfully", HttpStatus.OK);
+        Invitation createdInvitation = invitationService.createInvitation(invitation);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", HttpStatus.OK.value());
+        response.put("message", "Invitation created successfully");
+        response.put("invitationId", createdInvitation.getId());
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @PutMapping("/accept/{invitationId}")
@@ -69,25 +93,37 @@ public class InvitationController {
             @ApiResponse(responseCode = "404", description = "Invitation not found")
     })
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<String> acceptInvitation(@PathVariable Long invitationId) {
+    public ResponseEntity<Map<String, Object>> acceptInvitation(@PathVariable Long invitationId) {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String username = userDetails.getUsername();
         Users currentUser = usersService.findByLogin(username);
         if (currentUser == null) {
-            return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.NOT_FOUND.value());
+            response.put("message", "User not found");
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
         }
 
         Invitation invitation = invitationService.findById(invitationId);
         if (invitation == null) {
-            return new ResponseEntity<>("Invitation not found", HttpStatus.NOT_FOUND);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.NOT_FOUND.value());
+            response.put("message", "Invitation not found");
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
         }
 
         if (!invitation.getUserTo().getId().equals(currentUser.getId())) {
-            return new ResponseEntity<>("You are not authorized to accept this invitation", HttpStatus.FORBIDDEN);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.FORBIDDEN.value());
+            response.put("message", "You are not authorized to accept this invitation");
+            return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
         }
 
         if (!"PENDING".equals(invitation.getStatus())) {
-            return new ResponseEntity<>("Invitation is not pending", HttpStatus.BAD_REQUEST);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.BAD_REQUEST.value());
+            response.put("message", "Invitation is not pending");
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
 
 
@@ -96,7 +132,10 @@ public class InvitationController {
         invitation.setStatus("ACCEPTED");
         invitationService.updateInvitation(invitation);
 
-        return new ResponseEntity<>("Invitation accepted successfully", HttpStatus.OK);
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", HttpStatus.OK.value());
+        response.put("message", "Invitation accepted successfully");
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @GetMapping("/sent")
@@ -106,16 +145,23 @@ public class InvitationController {
             @ApiResponse(responseCode = "404", description = "User not found")
     })
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<List<Invitation>> getSentInvitations() {
+    public ResponseEntity<Map<String, Object>> getSentInvitations() {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String username = userDetails.getUsername();
         Users currentUser = usersService.findByLogin(username);
         if (currentUser == null) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.NOT_FOUND.value());
+            response.put("message", "User not found");
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
         }
 
         List<Invitation> sentInvitations = invitationService.findByUserFrom(currentUser.getId());
-        return new ResponseEntity<>(sentInvitations, HttpStatus.OK);
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", HttpStatus.OK.value());
+        response.put("message", "Invitations retrieved successfully");
+        response.put("invitations", sentInvitations);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @GetMapping("/received")
@@ -125,16 +171,23 @@ public class InvitationController {
             @ApiResponse(responseCode = "404", description = "User not found")
     })
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<List<Invitation>> getReceivedInvitations() {
+    public ResponseEntity<Map<String, Object>> getReceivedInvitations() {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String username = userDetails.getUsername();
         Users currentUser = usersService.findByLogin(username);
         if (currentUser == null) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.NOT_FOUND.value());
+            response.put("message", "User not found");
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
         }
 
         List<Invitation> receivedInvitations = invitationService.findByUserTo(currentUser.getId());
-        return new ResponseEntity<>(receivedInvitations, HttpStatus.OK);
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", HttpStatus.OK.value());
+        response.put("message", "Invitations retrieved successfully");
+        response.put("invitations", receivedInvitations);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @DeleteMapping("/delete/{invitationId}")
@@ -145,24 +198,36 @@ public class InvitationController {
             @ApiResponse(responseCode = "404", description = "Invitation not found")
     })
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<String> deleteInvitation(@PathVariable Long invitationId) {
+    public ResponseEntity<Map<String, Object>> deleteInvitation(@PathVariable Long invitationId) {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String username = userDetails.getUsername();
         Users currentUser = usersService.findByLogin(username);
         if (currentUser == null) {
-            return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.NOT_FOUND.value());
+            response.put("message", "User not found");
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
         }
 
         Invitation invitation = invitationService.findById(invitationId);
         if (invitation == null) {
-            return new ResponseEntity<>("Invitation not found", HttpStatus.NOT_FOUND);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.NOT_FOUND.value());
+            response.put("message", "Invitation not found");
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
         }
 
         if (!invitation.getUserFrom().getId().equals(currentUser.getId()) && !invitation.getUserTo().getId().equals(currentUser.getId())) {
-            return new ResponseEntity<>("You are not authorized to delete this invitation", HttpStatus.FORBIDDEN);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.FORBIDDEN.value());
+            response.put("message", "You are not authorized to delete this invitation");
+            return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
         }
 
         invitationService.deleteInvitation(invitationId);
-        return new ResponseEntity<>("Invitation deleted successfully", HttpStatus.OK);
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", HttpStatus.OK.value());
+        response.put("message", "Invitation deleted successfully");
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }
