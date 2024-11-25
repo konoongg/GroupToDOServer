@@ -22,6 +22,9 @@ import ru.nsu.db.tables.Users;
 import ru.nsu.db.tables.dto.LoginRequest;
 import ru.nsu.exceptions.UserAlreadyExistsException;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
@@ -41,13 +44,22 @@ public class AuthController {
             @ApiResponse(responseCode = "200", description = "User registered successfully"),
             @ApiResponse(responseCode = "409", description = "User already exists")
     })
-    public ResponseEntity<String> register(@RequestBody Users appUser) {
+    public  ResponseEntity<Map<String, Object>> register(@RequestBody Users appUser) {
         try {
             Users registeredUser = userService.registerUser(appUser);
             String jwt = jwtTokenService.generateToken(registeredUser.getLogin());
-            return ResponseEntity.ok(jwt);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.OK.value());
+            response.put("message", "User registered successfully");
+            response.put("id", registeredUser.getId());
+            response.put("token", jwt);
+            return ResponseEntity.ok(response);
         } catch (UserAlreadyExistsException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.CONFLICT.value());
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
         }
     }
 
@@ -57,18 +69,34 @@ public class AuthController {
             @ApiResponse(responseCode = "200", description = "User authenticated successfully"),
             @ApiResponse(responseCode = "401", description = "Invalid credentials or authentication failed")
     })
-    public ResponseEntity<String> login(@RequestBody LoginRequest loginRequest) {
+    public  ResponseEntity<Map<String, Object>> login(@RequestBody LoginRequest loginRequest) {
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(loginRequest.getLogin(), loginRequest.getPassword()));
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
+            Users user = userService.findByLogin(loginRequest.getLogin());
+
+
             String jwt = jwtTokenService.generateToken(loginRequest.getLogin());
-            return ResponseEntity.ok(jwt);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.OK.value());
+            response.put("message", "User authenticated successfully");
+            response.put("id", user.getId());
+            response.put("token", jwt);
+
+            return ResponseEntity.ok(response);
         } catch (BadCredentialsException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.UNAUTHORIZED.value());
+            response.put("message", "Invalid credentials");
+
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         } catch (AuthenticationException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication failed");
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.UNAUTHORIZED.value());
+            response.put("message", "Authentication failed");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         }
     }
 }
