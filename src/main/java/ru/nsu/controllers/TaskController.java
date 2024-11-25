@@ -16,7 +16,9 @@ import ru.nsu.db.services.UsersService;
 import ru.nsu.db.tables.Tasks;
 import ru.nsu.db.tables.Users;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/task")
@@ -26,75 +28,145 @@ public class TaskController {
     private TasksService taskService;
 
     @Autowired
-    private UsersService userService;
+    private UsersService usersService;
 
     @Autowired
     private UsersInGroupService usersInGroupService;
 
     @PostMapping("/create")
-    @Operation(summary = "Create a new task", description = "Creates a new task for the current user")
+    @Operation(summary = "Create a new task", description = "Creates a new task for the current user " +
+            "body{\n" +
+            "    \"name\": \"New Task\",\n" +
+            "    \"des\": \"This is a new task\",\n" +
+            "    \"location\": \"Some location\",\n" +
+            "    \"groupId\": 1,\n" +
+            "    \"status\": 0,\n" +
+            "    \"type\": 1,\n" +
+            "    \"date\": \"2023-12-31T23:59:59\"\n" +
+            "}")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Task created successfully")
+            @ApiResponse(responseCode = "200", description = "Task created successfully"),
+            @ApiResponse(responseCode = "404", description = "User not found")
     })
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<String> createTask(@RequestBody Tasks task) {
+    public ResponseEntity<Map<String, Object>> createTask(@RequestBody Tasks task) {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String username = userDetails.getUsername();
-        Users user = userService.findByLogin(username);
+        Users user = usersService.findByLogin(username);
+        if (user == null) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.NOT_FOUND.value());
+            response.put("message", "User not found");
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        }
         task.setOwner(user);
         Tasks createdTask = taskService.createTask(task);
-        return new ResponseEntity<>("task created", HttpStatus.OK);
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", HttpStatus.OK.value());
+        response.put("message", "Task created successfully");
+        response.put("taskId", createdTask.getId());
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @GetMapping("/uncompleted")
     @Operation(summary = "Get uncompleted tasks", description = "Retrieves a list of uncompleted tasks for the current user")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Uncompleted tasks retrieved successfully")
+            @ApiResponse(responseCode = "200", description = "Uncompleted tasks retrieved successfully"),
+            @ApiResponse(responseCode = "404", description = "User not found")
     })
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<List<Tasks>> getUncompletedTasks() {
+    public ResponseEntity<Map<String, Object>> getUncompletedTasks() {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String username = userDetails.getUsername();
-        Users user = userService.findByLogin(username);
+        Users currentUser = usersService.findByLogin(username);
+        if (currentUser == null) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.NOT_FOUND.value());
+            response.put("message", "User not found");
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        }
+        Users user = usersService.findByLogin(username);
         List<Tasks> uncompletedTasks = taskService.findByOwnerIdAndStatus(user.getId(), 0);
-        return ResponseEntity.ok(uncompletedTasks);
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", HttpStatus.OK.value());
+        response.put("message", "Uncompleted tasks retrieved successfully");
+        response.put("tasks", uncompletedTasks);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/completed")
     @Operation(summary = "Get completed tasks", description = "Retrieves a list of completed tasks for the current user")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Completed tasks retrieved successfully")
+            @ApiResponse(responseCode = "200", description = "Completed tasks retrieved successfully"),
+            @ApiResponse(responseCode = "404", description = "User not found")
     })
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<List<Tasks>> getCompletedTasks() {
+    public ResponseEntity<Map<String, Object>> getCompletedTasks() {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String username = userDetails.getUsername();
-        Users user = userService.findByLogin(username);
+        Users currentUser = usersService.findByLogin(username);
+        if (currentUser == null) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.NOT_FOUND.value());
+            response.put("message", "User not found");
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        }
+        Users user = usersService.findByLogin(username);
         List<Tasks> completedTasks = taskService.findByOwnerIdAndStatus(user.getId(), 1);
-        return ResponseEntity.ok(completedTasks);
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", HttpStatus.OK.value());
+        response.put("message", "Completed tasks retrieved successfully");
+        response.put("tasks", completedTasks);
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/update/{taskId}")
-    @Operation(summary = "Update a task", description = "Updates an existing task for the current user")
+    @Operation(summary = "Update a task", description = "Updates an existing task for the current user" +
+            "body{\n" +
+            "    \"name\": \"Updated Task\",\n" +
+            "    \"des\": \"This task has been updated\",\n" +
+            "    \"location\": \"Updated location\",\n" +
+            "    \"groupId\": 1,\n" +
+            "    \"status\": 1,\n" +
+            "    \"type\": 2,\n" +
+            "    \"date\": \"2024-12-31T23:59:59\"\n" +
+            "}")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Task updated successfully"),
-            @ApiResponse(responseCode = "404", description = "Task not found")
+            @ApiResponse(responseCode = "404", description = "Task not found"),
+            @ApiResponse(responseCode = "404", description = "User not found")
     })
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<String> updateTask(@PathVariable Long taskId, @RequestBody Tasks updatedTask) {
+    public ResponseEntity<Map<String, Object>> updateTask(@PathVariable Long taskId, @RequestBody Tasks updatedTask) {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String username = userDetails.getUsername();
-        Users user = userService.findByLogin(username);
+        Users user = usersService.findByLogin(username);
+        if (user == null) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.NOT_FOUND.value());
+            response.put("message", "User not found");
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        }
 
         Tasks existingTask = taskService.findById(taskId).orElse(null);
         if (existingTask == null || !existingTask.getOwner().getId().equals(user.getId())) {
-            return new ResponseEntity<>("task not found", HttpStatus.NOT_FOUND);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.NOT_FOUND.value());
+            response.put("message", "Task not found");
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
         }
         Tasks updated = taskService.updateTask(taskId, updatedTask);
         if (updated != null) {
-            return new ResponseEntity<>("task update", HttpStatus.OK);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.OK.value());
+            response.put("message", "Task updated successfully");
+            response.put("taskId", updated.getId());
+            return new ResponseEntity<>(response, HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("task not found", HttpStatus.NOT_FOUND);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.NOT_FOUND.value());
+            response.put("message", "Task not found");
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
         }
     }
 
@@ -102,24 +174,40 @@ public class TaskController {
     @Operation(summary = "Delete a task", description = "Deletes an existing task for the current user")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Task deleted successfully"),
-            @ApiResponse(responseCode = "404", description = "Task not found")
+            @ApiResponse(responseCode = "404", description = "Task not found"),
+            @ApiResponse(responseCode = "404", description = "User not found")
     })
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<String> deleteTask(@PathVariable Long taskId) {
+    public ResponseEntity<Map<String, Object>> deleteTask(@PathVariable Long taskId) {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String username = userDetails.getUsername();
-        Users user = userService.findByLogin(username);
+        Users user = usersService.findByLogin(username);
+        if (user == null) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.NOT_FOUND.value());
+            response.put("message", "User not found");
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        }
 
         Tasks existingTask = taskService.findById(taskId).orElse(null);
         if (existingTask == null || !existingTask.getOwner().getId().equals(user.getId())) {
-            return new ResponseEntity<>("task not found", HttpStatus.NOT_FOUND);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.NOT_FOUND.value());
+            response.put("message", "Task not found");
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
         }
 
         boolean deleted = taskService.deleteTask(taskId);
         if (deleted) {
-            return new ResponseEntity<>("task deleted", HttpStatus.OK);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.OK.value());
+            response.put("message", "Task deleted successfully");
+            return new ResponseEntity<>(response, HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("task not found", HttpStatus.NOT_FOUND);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.NOT_FOUND.value());
+            response.put("message", "Task not found");
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
         }
     }
 
@@ -127,34 +215,66 @@ public class TaskController {
     @Operation(summary = "Get completed tasks for a group", description = "Retrieves a list of completed tasks for a specific group")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Completed tasks retrieved successfully"),
-            @ApiResponse(responseCode = "403", description = "User is not a member of the group")
+            @ApiResponse(responseCode = "403", description = "User is not a member of the group"),
+            @ApiResponse(responseCode = "404", description = "User not found")
     })
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<List<Tasks>> getGroupUncompletedTasks(@PathVariable Long groupId) {
+    public ResponseEntity<Map<String, Object>> getGroupUncompletedTasks(@PathVariable Long groupId) {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String username = userDetails.getUsername();
-        Users user = userService.findByLogin(username);
+        Users user = usersService.findByLogin(username);
+        if (user == null) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.NOT_FOUND.value());
+            response.put("message", "User not found");
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        }
 
         if (!usersInGroupService.isUserInGroup(user.getId(), groupId)) {
-            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.FORBIDDEN.value());
+            response.put("message", "User is not a member of the group");
+            return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
         }
 
         List<Tasks> uncompletedTasks = taskService.findByGroupIdAndStatus(groupId, 0);
-        return ResponseEntity.ok(uncompletedTasks);
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", HttpStatus.OK.value());
+        response.put("message", "Uncompleted tasks retrieved successfully");
+        response.put("tasks", uncompletedTasks);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/group/completed/{groupId}")
+    @Operation(summary = "Get completed tasks for a group", description = "Retrieves a list of completed tasks for a specific group")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Completed tasks retrieved successfully"),
+            @ApiResponse(responseCode = "403", description = "User is not a member of the group"),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<List<Tasks>> getGroupCompletedTasks(@PathVariable Long groupId) {
+    public ResponseEntity<Map<String, Object>> getGroupCompletedTasks(@PathVariable Long groupId) {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String username = userDetails.getUsername();
-        Users user = userService.findByLogin(username);
-
+        Users user = usersService.findByLogin(username);
+        if (user == null) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.NOT_FOUND.value());
+            response.put("message", "User not found");
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        }
         if (!usersInGroupService.isUserInGroup(user.getId(), groupId)) {
-            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.FORBIDDEN.value());
+            response.put("message", "User is not a member of the group");
+            return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
         }
 
-        List<Tasks> uncompletedTasks = taskService.findByGroupIdAndStatus(groupId, 1);
-        return ResponseEntity.ok(uncompletedTasks);
+        List<Tasks> completedTasks = taskService.findByGroupIdAndStatus(groupId, 1);
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", HttpStatus.OK.value());
+        response.put("message", "Completed tasks retrieved successfully");
+        response.put("tasks", completedTasks);
+        return ResponseEntity.ok(response);
     }
 }
