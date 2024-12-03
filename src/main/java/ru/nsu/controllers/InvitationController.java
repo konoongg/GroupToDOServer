@@ -10,6 +10,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import ru.nsu.db.services.GroupsService;
 import ru.nsu.db.services.InvitationService;
 import ru.nsu.db.services.UsersInGroupService;
 import ru.nsu.db.services.UsersService;
@@ -33,7 +34,10 @@ public class InvitationController {
     @Autowired
     private UsersInGroupService usersInGroupService;
 
-    @PostMapping("/create")
+    @Autowired
+    private GroupsService groupsService;
+
+    @PostMapping("/create/{userId}/{groupId}")
     @Operation(summary = "Create a new invitation", description = "Creates a new invitation for a user to join a group" +
             "body {\n" +
             "  \"userTo\": {\n" +
@@ -49,7 +53,7 @@ public class InvitationController {
             @ApiResponse(responseCode = "404", description = "User not found")
     })
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<Map<String, Object>> createInvitation(@RequestBody Invitation invitation) {
+    public ResponseEntity<Map<String, Object>> createInvitation(@PathVariable Long userId, @PathVariable Long groupId) {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String username = userDetails.getUsername();
         Users userFrom = usersService.findByLogin(username);
@@ -60,21 +64,24 @@ public class InvitationController {
             return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
         }
 
-        if (!usersInGroupService.isUserAdminInGroup(userFrom.getId(), invitation.getGroup().getId())) {
+        if (!usersInGroupService.isUserAdminInGroup(userFrom.getId(), groupId)) {
             Map<String, Object> response = new HashMap<>();
             response.put("status", HttpStatus.FORBIDDEN.value());
             response.put("message", "User is not an admin of the group");
             return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
         }
 
-        if (usersInGroupService.isUserInGroup(invitation.getUserTo().getId(), invitation.getGroup().getId())) {
+        if (usersInGroupService.isUserInGroup(userId, groupId)) {
             Map<String, Object> response = new HashMap<>();
             response.put("status", HttpStatus.OK.value());
             response.put("message", "User already is a member of the group");
             return new ResponseEntity<>(response, HttpStatus.OK);
         }
 
+        Invitation invitation = new Invitation();
         invitation.setUserFrom(userFrom);
+        invitation.setUserTo(usersService.findById(userId));
+        invitation.setGroup(groupsService.findById(groupId));
         invitation.setStatus("PENDING");
         Invitation createdInvitation = invitationService.createInvitation(invitation);
 
